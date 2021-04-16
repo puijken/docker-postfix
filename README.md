@@ -48,6 +48,8 @@ The following env variable(s) are optional.
 
 * `SMTP_NETWORKS` Setting this will allow you to add additional, comma seperated, subnets to use the relay. Used like
     -e SMTP_NETWORKS='xxx.xxx.xxx.xxx/xx,xxx.xxx.xxx.xxx/xx'
+    ### This is now the only allowed host/subnet to relay. The default 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 are not added anymore.
+
 
 * `SMTP_PASSWORD_FILE` Setting this to a mounted file containing the password, to avoid passwords in env variables. Used like
     -e SMTP_PASSWORD_FILE=/secrets/smtp_password
