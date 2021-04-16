@@ -69,7 +69,7 @@ nets=''
 if [ ! -z "${SMTP_NETWORKS}" ]; then
         for i in $(sed 's/,/\ /g' <<<$SMTP_NETWORKS); do
                 if grep -Eq "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}" <<<$i ; then
-                        nets+=", $i"
+                        nets+="$i"
                 else
                         echo "$i is not in proper IPv4 subnet format. Ignoring."
                 fi
