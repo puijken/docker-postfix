@@ -13,8 +13,9 @@ function add_config_value() {
  postconf -e "${key} = ${value}"
 }
 
-# Read password from file to avoid unsecure env variables
+# Read password and username from file to avoid unsecure env variables
 if [ -n "${SMTP_PASSWORD_FILE}" ]; then [ -f "${SMTP_PASSWORD_FILE}" ] && read SMTP_PASSWORD < ${SMTP_PASSWORD_FILE} || echo "SMTP_PASSWORD_FILE defined, but file not existing, skipping."; fi
+if [ -n "${SMTP_USERNAME_FILE}" ]; then [ -f "${SMTP_USERNAME_FILE}" ] && read SMTP_USERNAME < ${SMTP_USERNAME_FILE} || echo "SMTP_USERNAME_FILE defined, but file not existing, skipping."; fi
 
 [ -z "${SMTP_SERVER}" ] && echo "SMTP_SERVER is not set" && exit 1
 [ -z "${SERVER_HOSTNAME}" ] && echo "SERVER_HOSTNAME is not set" && exit 1
@@ -26,9 +27,10 @@ SMTP_PORT="${SMTP_PORT:-587}"
 DOMAIN=`echo ${SERVER_HOSTNAME} | awk 'BEGIN{FS=OFS="."}{print $(NF-1),$NF}'`
 
 # Set needed config options
+add_config_value "maillog_file" "/dev/stdout"
 add_config_value "myhostname" ${SERVER_HOSTNAME}
 add_config_value "mydomain" ${DOMAIN}
-add_config_value "mydestination" 'localhost'
+add_config_value "mydestination" "${DESTINATION:-localhost}"
 add_config_value "myorigin" '$mydomain'
 add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
 add_config_value "smtp_use_tls" "yes"
@@ -90,4 +92,4 @@ fi
 # starting services
 rm -f /var/spool/postfix/pid/master.pid
 
-exec supervisord -c /etc/supervisord.conf
+exec /usr/sbin/postfix -c /etc/postfix start-fg
