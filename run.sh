@@ -57,6 +57,16 @@ add_config_value "minimal_backoff_time" "${MINIMAL_BACKOFF_TIME:-300s}"
 add_config_value "maximal_backoff_time" "${MAXIMAL_BACKOFF_TIME:-900s}"
 add_config_value "queue_run_delay" "${QUEUE_RUN_DELAY:-300s}"
 
+# A message stuck retrying for a while gets no signal at all by default --
+# Postfix's only built-in notification is the final bounce, which doesn't fire
+# until maximal_queue_lifetime (stock default 5 days) is reached. This adds an
+# earlier, non-destructive heads-up: once a message has been in the deferred
+# queue longer than this, Postfix emails the ORIGINAL SENDER a one-time "still
+# trying" notice and then keeps retrying normally -- it does not give up on
+# the message or shorten how long delivery is attempted. Whether that notice
+# reaches anyone useful depends on the sender setting a real envelope-from.
+add_config_value "delay_warning_time" "${DELAY_WARNING_TIME:-1h}"
+
 if [ "${SMTP_PORT}" = "465" ]; then
   add_config_value "smtp_tls_wrappermode" "yes"
   add_config_value "smtp_tls_security_level" "encrypt"

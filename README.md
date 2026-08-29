@@ -21,3 +21,13 @@ hours rather than a home relay's typical transient blip. Still overridable per d
 * `QUEUE_RUN_DELAY` (default `300s`) -- how often the queue manager scans for messages
   that are due for a retry.
 
+## Delivery delay notice
+
+* `DELAY_WARNING_TIME` (default `1h`) -- how long a message can sit in the deferred queue
+  before Postfix emails the original sender a one-time "still trying" notice. This is
+  separate from (and much earlier than) the final bounce, which only fires after
+  `maximal_queue_lifetime` (stock default `5d`) -- without this, a persistently failing
+  message gives no signal at all until that final bounce. Sending the notice does not stop
+  delivery from continuing to be retried normally. Whether the notice reaches anyone useful
+  depends on the sending application setting a real envelope-from address.
+
