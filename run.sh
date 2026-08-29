@@ -44,6 +44,19 @@ add_config_value "always_add_missing_headers" "${ALWAYS_ADD_MISSING_HEADERS:-no}
 # docker options (issue #51)
 add_config_value "smtp_host_lookup" "native,dns"
 
+# Queue retry timing. Postfix's own defaults (minimal_backoff_time=300s,
+# maximal_backoff_time=4000s/~67min) are tuned for a mail server that expects
+# long-lived outages -- fine in general, but for a low-volume home relay it
+# means a transient network blip that clears in 10-20 minutes can still sit
+# unretried for up to an hour before the next scheduled attempt happens to
+# land after recovery. Tightening the ceiling (not the floor -- an overloaded
+# remote still gets backed off from) catches a recovered network much sooner.
+# All three are still overridable via env var if a deployment wants the
+# stock behaviour back.
+add_config_value "minimal_backoff_time" "${MINIMAL_BACKOFF_TIME:-300s}"
+add_config_value "maximal_backoff_time" "${MAXIMAL_BACKOFF_TIME:-900s}"
+add_config_value "queue_run_delay" "${QUEUE_RUN_DELAY:-300s}"
+
 if [ "${SMTP_PORT}" = "465" ]; then
   add_config_value "smtp_tls_wrappermode" "yes"
   add_config_value "smtp_tls_security_level" "encrypt"

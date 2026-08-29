@@ -8,4 +8,16 @@ Changed the subnet restriction setting during the build of the container. In the
     -e SMTP_NETWORKS='xxx.xxx.xxx.xxx/xx,xxx.xxx.xxx.xxx/xx'
     ### This is now the only allowed host/subnet to relay. The default 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 are not added anymore.
 
+## Queue retry timing
+
+Tightened from Postfix's stock defaults, since those are tuned for outages measured in
+hours rather than a home relay's typical transient blip. Still overridable per deployment:
+
+* `MINIMAL_BACKOFF_TIME` (default `300s`) -- shortest gap between delivery attempts for a
+  deferred message.
+* `MAXIMAL_BACKOFF_TIME` (default `900s`, was Postfix's own default of `4000s`/~67min) --
+  longest gap between attempts. A shorter ceiling means a recovered network gets noticed
+  within 15 minutes worst-case instead of over an hour.
+* `QUEUE_RUN_DELAY` (default `300s`) -- how often the queue manager scans for messages
+  that are due for a retry.
 
