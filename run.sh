@@ -19,6 +19,9 @@ if [ -n "${SMTP_USERNAME_FILE}" ]; then [ -f "${SMTP_USERNAME_FILE}" ] && read S
 
 [ -z "${SMTP_SERVER}" ] && echo "SMTP_SERVER is not set" && exit 1
 [ -z "${SERVER_HOSTNAME}" ] && echo "SERVER_HOSTNAME is not set" && exit 1
+# No default on purpose: SMTP_NETWORKS is the only relay access control, so start nothing
+# rather than fall back to something broader.
+[ -z "${SMTP_NETWORKS}" ] && echo "SMTP_NETWORKS is not set" && exit 1
 [ ! -z "${SMTP_USERNAME}" -a -z "${SMTP_PASSWORD}" ] && echo "SMTP_USERNAME is set but SMTP_PASSWORD is not set" && exit 1
 
 SMTP_PORT="${SMTP_PORT:-587}"

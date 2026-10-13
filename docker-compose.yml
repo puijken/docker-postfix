@@ -1,11 +1,14 @@
-version: '2'
 services:
   postfix:
     image: ghcr.io/puijken/docker-postfix:latest
-    expose:
-    - "25"
-    env_file:
-      - .env
+    container_name: postfix
     restart: always
-    volumes:
-     - "/etc/localtime:/etc/localtime:ro"
+    expose:
+      - "25"
+    env_file:
+      - .env   # SMTP_USERNAME / SMTP_PASSWORD belong here, not in the compose file
+    environment:
+      - SMTP_SERVER=smtp.gmail.com
+      - SERVER_HOSTNAME=relay.example.com
+      - SMTP_NETWORKS=192.168.10.0/24
+      - TZ=Europe/Amsterdam
