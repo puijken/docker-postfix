@@ -36,7 +36,6 @@ add_config_value "mydomain" ${DOMAIN}
 add_config_value "mydestination" "${DESTINATION:-localhost}"
 add_config_value "myorigin" '$mydomain'
 add_config_value "relayhost" "[${SMTP_SERVER}]:${SMTP_PORT}"
-add_config_value "smtp_tls_security_level" "may"
 if [ ! -z "${SMTP_USERNAME}" ]; then
   add_config_value "smtp_sasl_auth_enable" "yes"
   add_config_value "smtp_sasl_password_maps" "lmdb:/etc/postfix/sasl_passwd"
@@ -70,9 +69,31 @@ add_config_value "queue_run_delay" "${QUEUE_RUN_DELAY:-300s}"
 # reaches anyone useful depends on the sender setting a real envelope-from.
 add_config_value "delay_warning_time" "${DELAY_WARNING_TIME:-1h}"
 
+# TLS towards the upstream server.
+#
+# With credentials configured the default is "encrypt": no TLS, no delivery (the message is
+# deferred and retried). The old fixed "may" is opportunistic. When the server does not offer
+# STARTTLS -- or something on the path strips the offer -- Postfix carries on in plain text and
+# sends the SASL password in the clear. Without credentials there is no secret to protect, and
+# "may" keeps working with an upstream that has no TLS at all.
+#
+# SMTP_TLS_SECURITY_LEVEL overrides the default with any Postfix level. "verify" and "secure"
+# additionally check the server's certificate against the system CA bundle, which "encrypt" does
+# not do.
+if [ -n "${SMTP_USERNAME}" ]; then
+  tls_level="${SMTP_TLS_SECURITY_LEVEL:-encrypt}"
+else
+  tls_level="${SMTP_TLS_SECURITY_LEVEL:-may}"
+fi
 if [ "${SMTP_PORT}" = "465" ]; then
   add_config_value "smtp_tls_wrappermode" "yes"
-  add_config_value "smtp_tls_security_level" "encrypt"
+  # Implicit TLS has no plain-text phase, so anything weaker than "encrypt" makes no sense here.
+  case "${tls_level}" in none|may) tls_level="encrypt" ;; esac
+fi
+add_config_value "smtp_tls_security_level" "${tls_level}"
+# Only consulted by the levels that verify the certificate ("verify", "secure", "dane" fallback).
+if [ -f /etc/ssl/certs/ca-certificates.crt ]; then
+  add_config_value "smtp_tls_CAfile" "/etc/ssl/certs/ca-certificates.crt"
 fi
 
 # Create sasl_passwd file with auth credentials

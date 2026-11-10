@@ -13,7 +13,8 @@ and now maintained separately. The main differences:
   private network can send mail through it.
 - **Queue retries are tightened**, and a stuck message triggers an early "still trying" notice
   (see below).
-- TLS uses `smtp_tls_security_level` instead of the deprecated `smtp_use_tls`.
+- TLS uses `smtp_tls_security_level` instead of the deprecated `smtp_use_tls`, and is
+  **required** as soon as credentials are configured (see `SMTP_TLS_SECURITY_LEVEL`).
 - `TZ` works (the image includes `tzdata`).
 
 ## Quick start
@@ -33,6 +34,13 @@ services:
       - SERVER_HOSTNAME=relay.example.com
       - SMTP_NETWORKS=192.168.10.0/24
       - TZ=Europe/Amsterdam
+    volumes:
+      # The mail queue. Without a volume, mail still waiting for delivery is lost whenever the
+      # container is recreated (an image update, a compose change).
+      - spool:/var/spool/postfix
+
+volumes:
+  spool:
 ```
 
 Then point your applications at the container on port 25, without authentication or TLS.
@@ -51,10 +59,17 @@ Then point your applications at the container on port 25, without authentication
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `SMTP_PORT` | `587` | Upstream port. `587` uses STARTTLS when offered. `465` switches to implicit TLS and requires encryption. |
+| `SMTP_PORT` | `587` | Upstream port. `587` uses STARTTLS. `465` switches to implicit TLS. |
+| `SMTP_TLS_SECURITY_LEVEL` | `encrypt` with `SMTP_USERNAME`, otherwise `may` | Postfix `smtp_tls_security_level` for the upstream connection. `encrypt`: no TLS, no delivery (the message is deferred and retried). `may`: use TLS when offered, otherwise plain text. `verify` / `secure`: also check the server's certificate against the system CA bundle. On port `465`, `none` and `may` are raised to `encrypt`. |
 | `SMTP_USERNAME` | — | SASL username. If set, `SMTP_PASSWORD` is required. |
 | `SMTP_PASSWORD` | — | SASL password (for Gmail, an app password). |
 | `SMTP_USERNAME_FILE`, `SMTP_PASSWORD_FILE` | — | Read the username or password from a file instead, e.g. a Docker secret. |
+
+**Why `encrypt` is the default with credentials.** `may` is opportunistic: if the upstream does
+not offer STARTTLS, or something on the path strips the offer, Postfix continues in plain text
+and sends the SASL password in the clear. `encrypt` refuses instead. It does not check *whose*
+certificate it is; use `secure` for that if your upstream has a publicly trusted certificate.
+Set `SMTP_TLS_SECURITY_LEVEL=may` only for an upstream that genuinely has no TLS.
 
 ### Message handling
 
@@ -86,6 +101,13 @@ Without this, a failing message gives no signal at all until the final bounce af
 `maximal_queue_lifetime` (5 days by default). The notice does not stop delivery from being
 retried. Whether it reaches anyone useful depends on the sending application setting a real
 envelope-from address.
+
+### The mail queue
+
+The queue lives in `/var/spool/postfix`. Put a volume there (as in the quick start) if queued
+mail must survive the container being recreated. A restart keeps the queue either way; a
+recreate without a volume starts with an empty one, and whatever was still waiting for a retry
+is gone without a bounce.
 
 ### Other
 

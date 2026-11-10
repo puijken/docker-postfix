@@ -12,3 +12,10 @@ services:
       - SERVER_HOSTNAME=relay.example.com
       - SMTP_NETWORKS=192.168.10.0/24
       - TZ=Europe/Amsterdam
+    volumes:
+      # The mail queue. Without a volume, mail still waiting for delivery is lost whenever the
+      # container is recreated (an image update, a compose change).
+      - spool:/var/spool/postfix
+
+volumes:
+  spool:
