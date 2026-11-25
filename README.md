@@ -122,8 +122,9 @@ Logs go to the container's stdout (`docker logs postfix`).
 
 Published as `ghcr.io/puijken/docker-postfix:latest`. GitHub Actions builds and pushes it on a
 push to `master`, on manual dispatch, and monthly to pick up base-image security rebuilds.
-Dependabot keeps the base image and actions current. Pull requests are build-checked before
-merging.
+Dependabot keeps the base image and actions current. Pull requests are build-checked; non-major
+Dependabot bumps are merged automatically and then built (`dependabot-auto-merge.yml` dispatches
+`build.yml`).
 
 ## License
 
